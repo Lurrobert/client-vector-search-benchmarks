@@ -1,0 +1,30 @@
+- Objective: Demonstrate the cost-effectiveness and superiority of client-side calculations compared to server-side calculations.
+- Implementation: Utilize 10,000 randomly generated bearings or allow user uploads for computations.
+- Perform predefined calculations on both server-side and in the browser.
+- Showcase and compare CPU usage, time consumption, and cost associated with each method.
+- Highlight the advantages of client-side computations.
+- Emphasize the significant benefits in terms of cost and efficiency.
+
+# Interface
+The user interface for this tech can be designed to include a button with additional functionality. Here’s a detailed description of how it could be implemented:
+1.	UI Design:
+▪	The main interface can consist of a clean and modern design, with a central content area and a button at the bottom.
+▪	The content area can be divided into two panels, one for server-side calculations and another for client-side calculations.
+▪	Each panel can display relevant information such as CPU usage, time consumption, and cost.
+2.	Button Functionality:
+▪	The button can have a label such as “Compare Calculations” or “Run Analysis.”
+▪	On a single click, it triggers the execution of the predefined calculations for both server-side and client-side environments.
+3.	Function Calls:
+▪	On clicking the button, the web application can initiate the following function calls:
+▪	serverSideCalculations():
+◦	This function would send a request to the server-side API or backend to perform the predefined calculations with the uploaded or randomly generated bearings.
+◦	It would record CPU usage, time consumption, and cost associated with these computations.
+◦	The results can be displayed in the server-side calculations panel.
+▪	clientSideCalculations():
+◦	This function would execute the same predefined calculations within the browser using JavaScript or other client-side technologies.
+◦	It would measure CPU usage, time consumption, and compute the cost associated with these computations.
+◦	The results can be displayed in the client-side calculations panel.
+
+
+# ideas
+create a backend to see how well different computer perform when they go to our webpage
