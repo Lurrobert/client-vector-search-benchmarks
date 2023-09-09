@@ -118,7 +118,7 @@ self.addEventListener('message', async (event) => {
                     { topK: 5 },
                     true,
                     'dbName',
-                    '1'
+                    'ObjectStoreName'
                 )
                 console.log('results', results)
                 self.postMessage({
@@ -127,7 +127,7 @@ self.addEventListener('message', async (event) => {
                     output: results,
                 });
 
-                const DBsize = await index.getAllObjectsFromDB('dbName', '1')
+                const DBsize = await index.getAllObjectsFromDB('dbName', 'ObjectStoreName')
                 console.log('DBsize', DBsize.length)
                 self.postMessage({
                     type: 'search',
@@ -169,7 +169,7 @@ self.addEventListener('message', async (event) => {
                         });
                     }
                 }
-                await index.saveIndexToDB("dbName", "1");
+                await index.saveIndexToDB("dbName", "ObjectStoreName");
 
                 endTime = new Date();
                 let timeDiff = (endTime - startTime) / 1000;
@@ -187,5 +187,20 @@ self.addEventListener('message', async (event) => {
                 });
             }
             break;        
+        case 'delete':
+            try {
+                await index.deleteObjectStore("dbName", text)
+                self.postMessage({
+                    type: 'delete',
+                    status: 'complete',
+                });
+            } catch (error) {
+                console.error(error);
+                self.postMessage({
+                    type: 'delete',
+                    status: 'error',
+                    error: error.message,
+                });
+            }
         }
     });

@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import {CircularProgress, Card, CardBody, CardFooter, Chip} from "@nextui-org/react";
+
 
 export default function Home() {
 
@@ -100,6 +102,12 @@ export default function Home() {
       worker.current.postMessage({ type: 'addRawText', text });
     }
   }, []);
+
+  const deleteObjectStore = useCallback((text) => {
+    if (worker.current) {
+      worker.current.postMessage({ type: 'delete', text });
+    }
+  }, []);
   
 
   return (
@@ -172,13 +180,32 @@ export default function Home() {
               {
                 inProgress ? (
                   <>
-                    <p>Loading...</p>
-                    <div className="relative pt-3">
-                      <div className="overflow-hidden h-4 mb-4 text-sm flex rounded bg-blue-200">
-                      <div style={{ width: `${(currentProgress/inputValue)*100}%`, height: '70px' }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"></div>
-                      <div>{currentProgress} / {inputValue} </div>
-                      </div>
-                    </div>
+                    <Card className="w-[240px] h-[240px] border-none">
+                      <CardBody className="justify-center items-center pb-0">
+                        <CircularProgress
+                          classNames={{
+                            svg: "w-36 h-36 drop-shadow-md",
+                            indicator: "stroke-black",
+                            track: "stroke-black/10",
+                            value: "text-3xl font-semibold text-black",
+                          }}
+                          value={(currentProgress/inputValue)*100}
+                          strokeWidth={4}
+                          showValueLabel={true}
+                        />
+                      </CardBody>
+                      <CardFooter className="justify-center items-center pt-0">
+                        <Chip
+                          classNames={{
+                            base: "border-1 border-black/30",
+                            content: "text-black/90 text-small font-semibold",
+                          }}
+                          variant="bordered"
+                        >
+                          {currentProgress} / {inputValue} Data points
+                        </Chip>
+                      </CardFooter>
+                    </Card>
                   </>
                 ) : (
                   <h1 className="text-5xl font-bold mb-2 text-center">
@@ -234,6 +261,15 @@ export default function Home() {
                 )
               }
               TOTAL SIZE: {size}
+              <button
+              className="w-full max-w-xs p-2 border border-gray-300 rounded"
+              onClick={e => {
+                setInProgress(false);
+                deleteObjectStore('ObjectStoreName')
+              }}
+            >
+              Delete DB
+            </button>
             </div>
           )}
         </div>
