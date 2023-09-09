@@ -22,7 +22,6 @@ function splitTextWithOverlap(text) {
     // Split the text into an array of words
     // strip any nymber of repeated space characters or new line with a single space
     text = text.replace(/\s+/g, ' ')
-    console.log('text', text)
     const words = text.split(' ');
   
     // Initialize variables for sentence length and overlapping
@@ -68,7 +67,6 @@ async function generateEmbeddings(numVectors, numWords = 5) {
         index.add(objectToAdd);
 
         if ((i + 1) % 50 === 0) {
-            console.log('50v done...');
             self.postMessage({
                 type: 'classify',
                 status: 'update',
@@ -122,7 +120,6 @@ self.addEventListener('message', async (event) => {
                     'dbName',
                     'ObjectStoreName'
                 )
-                console.log('results', results)
                 self.postMessage({
                     type: 'search',
                     status: 'complete',
@@ -130,7 +127,6 @@ self.addEventListener('message', async (event) => {
                 });
 
                 const DBsize = await index.getAllObjectsFromDB('dbName', 'ObjectStoreName')
-                console.log('DBsize', DBsize.length)
                 self.postMessage({
                     type: 'search',
                     status: 'size',
@@ -148,14 +144,12 @@ self.addEventListener('message', async (event) => {
             break;
         case 'addRawText':
             try {
-                console.log('text', text)
                 const sentences = splitTextWithOverlap(text);
                 self.postMessage({
                     type: 'search',
                     status: 'size',
                     output: sentences.length,
                 });
-                console.log('sentences', sentences)
                 let startTime, endTime;
                 self.postMessage({
                     type: 'classify',
@@ -168,7 +162,6 @@ self.addEventListener('message', async (event) => {
                     index.add(objectToAdd);
 
                     if ((i + 1) % 50 === 0) {
-                        console.log('50+ done...');
                         self.postMessage({
                             type: 'classify',
                             status: 'update',

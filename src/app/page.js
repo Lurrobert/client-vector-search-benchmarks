@@ -1,7 +1,10 @@
 "use client"
-
+import React from "react";
 import { useState, useEffect, useRef, useCallback } from 'react'
+
 import {CircularProgress, Card, CardBody, CardFooter, Chip} from "@nextui-org/react";
+import { Button } from "@nextui-org/react";
+
 
 
 export default function Home() {
@@ -135,7 +138,7 @@ export default function Home() {
         onChange={handleInputChange}
       />
 
-      <p className="text-center mb-4">Number of vectors to generate: <span className="font-bold">{inputValue}</span></p>
+      <div className="text-center mb-4">Number of vectors to generate: <span className="font-bold">{inputValue}</span></div>
       <button
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
         onClick={e => {
@@ -146,7 +149,7 @@ export default function Home() {
         Submit
       </button>
 
-      <p className="text-center mb-4">Paste raw text to add to the database</p>
+      <div className="text-center mb-4">Paste raw text to add to the database</div>
       
       <textarea
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
@@ -231,7 +234,8 @@ export default function Home() {
 
             />
           </div>
-          <button
+          <Button 
+            color="primary"
             className="w-full max-w-xs p-2 border border-gray-300 rounded"
             onClick={e => {
               setInProgress(true);
@@ -239,22 +243,24 @@ export default function Home() {
             }}
           >
             Search
-          </button>
+          </Button>
           {ready !== null && (
             <div>
               {
                 inProgress ? (
                   <>
-                    <p>Loading...</p>
+                    <div>Loading...</div>
                   </>
                 ) : (
                   <>
                     {searchResult && searchResult.map((item, index) => (
                       <div key={index}>
-                        <div className="w-full max-w-xs p-2">
-                          <pre>{`Similarity: ${item.similarity}`}</pre>
-                          <pre>{`Match: ${JSON.stringify(item.object.name)}`}</pre>
-                        </div>
+                        <Card>
+                          <CardBody>
+                            <div>{`Similarity: ${item.similarity}`}</div>
+                            <div>{`Match: ${JSON.stringify(item.object.name).slice(0, -3)}`}</div>
+                          </CardBody>
+                        </Card>
                       </div>
                     ))}
                   </>
