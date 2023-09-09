@@ -8,16 +8,24 @@ import { Button } from "@nextui-org/react";
 
 
 export default function Home() {
-
-  const [result, setResult] = useState(null);
-  const [ready, setReady] = useState(null);
+  // global
   const [inputValue, setInputValue] = useState(250);
-  const [inProgress, setInProgress] = useState(false);
-  const [currentProgress, setCurrentProgress] = useState(0);
   const [searchValue, setSearchValue] = useState('');
   const [rawText, setRawText] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [size, setSize] = useState(null);
+
+  // local
+  const [resultLocal, setResultLocal] = useState(null);
+  const [readyLocal, setReadyLocal] = useState(null);
+  const [inProgressLocal, setInProgressLocal] = useState(false);
+  const [currentProgressLocal, setCurrentProgressLocal] = useState(0);
+
+  // cloud
+  const [resultCloud, setResultCloud] = useState(null);
+  const [readyCloud, setReadyCloud] = useState(null);
+  const [inProgressCloud, setInProgressCloud] = useState(false);
+  const [currentProgressCloud, setCurrentProgressCloud] = useState(0);
 
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
@@ -32,65 +40,97 @@ export default function Home() {
     }
 
     const onMessageReceived = (e) => {
-      switch (e.data.type) {
-        case 'classify':
-          switch (e.data.status) {
-            case 'initiate':
-              setReady(false);
+      switch (e.data.cloud) {
+        case false:{
+          switch (e.data.type) {
+            case 'classify':
+              switch (e.data.status) {
+                case 'initiate':
+                  setReadyLocal(false);
+                  break;
+                case 'complete':
+                  setReadyLocal(true);
+                  setResultLocal(e.data.output)
+                  setInProgressLocal(false);
+                  setCurrentProgressLocal(0)
+                  break;
+                case 'update':
+                  setReadyLocal(false);
+                  setCurrentProgressLocal(e.data.progress)
+                  break;
+                case 'error':
+                  setReadyLocal(true);
+                  setResultLocal(e.data.error)
+                  setInProgressLocal(false);
+                  break;
+              }
               break;
-            case 'complete':
-              setReady(true);
-              setResult(e.data.output)
-              setInProgress(false);
-              setCurrentProgress(0)
+            case 'search':
+              switch (e.data.status) {
+                case 'initiate':
+                  setReadyLocal(false);
+                  break;
+                case 'complete':
+                  setReadyLocal(true);
+                  setSearchResult(e.data.output)
+                  setInProgressLocal(false);
+                  break;
+                case 'update':
+                  setReadyLocal(false);
+                  setCurrentProgressLocal(e.data.progress)
+                  break;
+                case 'error':
+                  setReadyLocal(true);
+                  setResultLocal(e.data.error)
+                  setInProgressLocal(false);
+                  break;
+                case 'size':
+                  setReadyLocal(true);
+                  setSize(e.data.output)
+                  setInProgressLocal(false);
+                  break;
+              }
               break;
-            case 'update':
-              setReady(false);
-              setCurrentProgress(e.data.progress)
+            case 'addRawText':
+              switch (e.data.status) {
+                case 'size':
+                  setReadyLocal(true);
+                  setCurrentProgressLocal(0)
+                  setInputValue(e.data.output)
+                  break;
+              }
               break;
-            case 'error':
-              setReady(true);
-              setResult(e.data.error)
-              setInProgress(false);
-              break;
+            }
           }
           break;
-        case 'search':
-          switch (e.data.status) {
-            case 'initiate':
-              setReady(false);
+        case true: {
+          switch (e.data.type) {
+            case 'classify':
+              switch (e.data.status) {
+                case 'initiate':
+                  setReadyCloud(false);
+                  break;
+                case 'complete':
+                  setReadyCloud(true);
+                  setResultCloud(e.data.output)
+                  setInProgressCloud(false);
+                  setCurrentProgressCloud(0)
+                  break;
+                case 'update':
+                  setReadyCloud(false);
+                  setCurrentProgressCloud(e.data.progress)
+                  break;
+                case 'error':
+                  setReadyCloud(true);
+                  setResultCloud(e.data.error)
+                  setInProgressCloud(false);
+                  break;
+              }
               break;
-            case 'complete':
-              setReady(true);
-              setSearchResult(e.data.output)
-              setInProgress(false);
-              break;
-            case 'update':
-              setReady(false);
-              setCurrentProgress(e.data.progress)
-              break;
-            case 'error':
-              setReady(true);
-              setResult(e.data.error)
-              setInProgress(false);
-              break;
-            case 'size':
-              setReady(true);
-              setSize(e.data.output)
-              setInProgress(false);
-              break;
+            }
           }
           break;
-        case 'addRawText':
-          switch (e.data.status) {
-            case 'size':
-              setReady(true);
-              setCurrentProgress(0)
-              setInputValue(e.data.output)
-              break;
-          }
-          break;
-        }
+      }
     };
 
     worker.current.addEventListener('message', onMessageReceived);
@@ -99,7 +139,7 @@ export default function Home() {
 
   const classify = useCallback((text) => {
     if (worker.current) {
-      worker.current.postMessage({ type: 'classify', text });
+      worker.current.postMessage({ type: 'classify', text: text });
     }
   }, []);
 
@@ -125,8 +165,8 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-12">
       
-      <h1 className="text-5xl font-bold mb-2 text-center">Transformers.js</h1>
-      <h2 className="text-2xl mb-4 text-center">Next.js template (client-side)</h2>
+      <h1 className="text-5xl font-bold mb-2 text-center">Semantic search indexing</h1>
+      <h2 className="text-2xl mb-4 text-center">On client side (no backend) VS cloud</h2>
       <input
         type="range"
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
@@ -137,7 +177,6 @@ export default function Home() {
         defaultValue="250"
         onChange={handleInputChange}
       />
-      {/* manual input */}
       <input
         type="number"
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
@@ -153,14 +192,15 @@ export default function Home() {
         color="primary"
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
         onClick={e => {
-          setInProgress(true);
+          setInProgressLocal(true);
+          setInProgressCloud(true);
           classify(parseInt(inputValue))
         }}
       >
         Generate random embeddings
       </Button>
 
-      <div className="text-center mb-4">Paste raw text to add to the database</div>
+      {/* <div className="text-center mb-4">Paste raw text to add to the database</div>
       
       <textarea
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
@@ -169,8 +209,8 @@ export default function Home() {
         onChange={e => {
           setRawText(e.target.value)
         }}
-      />
-      
+      /> */}
+{/*       
       <Button
         color="primary"
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
@@ -180,7 +220,7 @@ export default function Home() {
         }}
       >
         Generate embeddings from raw text
-      </Button>
+      </Button> */}
 
 
 
@@ -189,10 +229,10 @@ export default function Home() {
         {/* Left Panel */}
         <div className="w-1/2 flex flex-col items-center justify-center p-12">
           <h1 className="text-5xl font-bold mb-2 text-center">Client side compute</h1>
-          {ready !== null && (
+          {readyLocal !== null && (
             <div>
               {
-                inProgress ? (
+                inProgressLocal ? (
                   <>
                     <Card className="w-[240px] h-[240px] border-none">
                       <CardBody className="justify-center items-center pb-0">
@@ -203,7 +243,7 @@ export default function Home() {
                             track: "stroke-black/10",
                             value: "text-3xl font-semibold text-black",
                           }}
-                          value={(currentProgress/inputValue)*100}
+                          value={(currentProgressLocal/inputValue)*100}
                           strokeWidth={4}
                           showValueLabel={true}
                         />
@@ -216,14 +256,14 @@ export default function Home() {
                           }}
                           variant="bordered"
                         >
-                          {currentProgress} / {inputValue} Data points
+                          {currentProgressLocal} / {inputValue} Data points
                         </Chip>
                       </CardFooter>
                     </Card>
                   </>
                 ) : (
                   <h1 className="text-5xl font-bold mb-2 text-center">
-                    <pre>{result} seconds</pre>
+                    <pre>{resultLocal} seconds</pre>
                     <pre>for {inputValue} vectors</pre>
                   </h1>
                   
@@ -232,6 +272,58 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* Right Panel */}
+
+        <div className="w-1/2 flex flex-col items-center justify-center p-12">
+          <h1 className="text-5xl font-bold mb-2 text-center">Client side compute</h1>
+          {readyCloud !== null && (
+            <div>
+              {
+                inProgressCloud ? (
+                  <>
+                    <Card className="w-[240px] h-[240px] border-none">
+                      <CardBody className="justify-center items-center pb-0">
+                        <CircularProgress
+                          classNames={{
+                            svg: "w-36 h-36 drop-shadow-md",
+                            indicator: "stroke-black",
+                            track: "stroke-black/10",
+                            value: "text-3xl font-semibold text-black",
+                          }}
+                          value={(currentProgressCloud/inputValue)*100}
+                          strokeWidth={4}
+                          showValueLabel={true}
+                        />
+                      </CardBody>
+                      <CardFooter className="justify-center items-center pt-0">
+                        <Chip
+                          classNames={{
+                            base: "border-1 border-black/30",
+                            content: "text-black/90 text-small font-semibold",
+                          }}
+                          variant="bordered"
+                        >
+                          {currentProgressCloud} / {inputValue} Data points
+                        </Chip>
+                      </CardFooter>
+                    </Card>
+                  </>
+                ) : (
+                  <h1 className="text-5xl font-bold mb-2 text-center">
+                    <pre>{resultCloud} seconds</pre>
+                    <pre>for {inputValue} vectors</pre>
+                  </h1>
+                  
+                )
+              }
+            </div>
+          )}
+        </div>
+
+
+
+        
         <div className="w-1/2 flex flex-col items-center justify-center p-12">
           <h1 className="text-5xl font-bold mb-2 text-center">Embedding Search</h1>
           <div className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4">
@@ -249,13 +341,13 @@ export default function Home() {
             color="primary"
             className="w-full max-w-xs p-2 border border-gray-300 rounded"
             onClick={e => {
-              setInProgress(true);
+              setInProgressLocal(true);
               searchEmbeddings(searchValue)
             }}
           >
             Search
           </Button>
-          {ready !== null && (
+          {readyLocal !== null && (
             <div>
               {(
                   <>
@@ -287,7 +379,7 @@ export default function Home() {
               color="danger"
               className="w-full max-w-xs p-2 border border-gray-300 rounded"
               onClick={e => {
-                setInProgress(false);
+                setInProgressLocal(false);
                 deleteObjectStore('ObjectStoreName')
               }}
             >

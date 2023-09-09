@@ -4,85 +4,187 @@ import axios from 'axios';
 
 export async function getServerSideProps() {
     let vocabulary = [];
-  
+
     try {
         console.log('Downloading the file...');
         const response = await axios.get('https://raw.githubusercontent.com/gokhanyavas/Oxford-3000-Word-List/master/Oxford%203000%20Word%20List.txt');
-      const data = response.data;
-  
-      vocabulary = data.split('\n');
+        const data = response.data;
+
+        vocabulary = data.split('\n');
     } catch (error) {
-      console.error('Error downloading the file:', error);
+        console.error('Error downloading the file:', error);
     }
-  
+
     return vocabulary
-  }
+}
 
 function splitTextWithOverlap(text) {
     // Split the text into an array of words
     // strip any nymber of repeated space characters or new line with a single space
     text = text.replace(/\s+/g, ' ')
     const words = text.split(' ');
-  
+
     // Initialize variables for sentence length and overlapping
     const sentenceLengthToSplit = 15;
     const overlapping = 4;
-  
+
     // Initialize an empty array to store the resulting sentences
     let result = [];
-  
+
     // Iterate over the array of words to create sentences
     for (let i = 0; i < words.length; i += sentenceLengthToSplit - overlapping) {
-      // Extract a slice of words to form a sentence
-      let slice = words.slice(i, i + sentenceLengthToSplit);
-  
-      // Join the slice into a sentence and add it to the result array
-      result.push(slice.join(' '));
-    }
-  
-    return result;
-  }
+        // Extract a slice of words to form a sentence
+        let slice = words.slice(i, i + sentenceLengthToSplit);
 
-const vocabulary =  await getServerSideProps();
+        // Join the slice into a sentence and add it to the result array
+        result.push(slice.join(' '));
+    }
+
+    return result;
+}
+
+const vocabulary = await getServerSideProps();
 
 const index = new EmbeddingIndex();
+let completed = 0;
+let promises = [];
+
+
+async function makeRequestAndCheckStatus(randomWords, i, index) {
+    const options = {
+        method: 'POST',
+        url: 'https://rudyzfwgfyqdrkgdisnh.functions.supabase.co/gte-inference',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1ZHl6ZndnZnlxZHJrZ2Rpc25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQyNTk4NTEsImV4cCI6MjAwOTgzNTg1MX0.Pt2lSJrXSv8lhgGfFVi1csgmdZoPcP5_4Yu2oky1BAs',
+        },
+        data: {
+            "input": randomWords
+        }
+    };
+    return new Promise((resolve, reject) => {
+        axios.request(options)
+            .then(response => {
+                const objectToAdd = { id: i, name: randomWords, embedding: response.data.embedding };
+                index.add(objectToAdd);
+                completed++;
+                self.postMessage({
+                    type: 'classify',
+                    status: 'update',
+                    progress: completed,
+                    cloud: true
+                });
+                resolve();
+            })
+            .catch(error => {
+                console.error(`Error making the request: ${error}`);
+                reject(error);
+            });
+    });
+}
+
+
+async function handlePromises() {
+    while (true) {
+        let pendingPromises = promises.filter(p => p.status === 'pending');
+        if (pendingPromises.length === 0) {
+            break; // Exit if all promises are settled
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second before checking again
+    }
+}
 
 async function generateEmbeddings(numVectors, numWords = 5) {
     const vocabLength = vocabulary.length;
+
+    // Local computing
     let startTime, endTime;
     self.postMessage({
         type: 'classify',
         status: 'initiate',
+        cloud: false
     });
-
     startTime = new Date();
     for (let i = 0; i < numVectors; i++) {
         var randomWords = ''
         for (let j = 0; j < numWords; j++) {
-            const randomIndex = Math.floor(Math.random() * (vocabLength-1));
+            const randomIndex = Math.floor(Math.random() * (vocabLength - 1));
             randomWords += vocabulary[randomIndex] + ' ';
         }
-
         const objectToAdd = { id: i, name: randomWords, embedding: await getEmbedding(randomWords) };
         index.add(objectToAdd);
-
-        if ((i + 1) % 50 === 0) {
+        if ((i + 1) % 10 === 0) {
             self.postMessage({
                 type: 'classify',
                 status: 'update',
                 progress: i + 1,
+                cloud: false
             });
         }
     }
-    await index.saveIndexToDB("dbName", "ObjectStoreName");
-
     endTime = new Date();
     let timeDiff = (endTime - startTime) / 1000;
     timeDiff = timeDiff.toFixed(2);
     console.log(
-        'TT TIME', timeDiff
+        'Local time', timeDiff
     )
-    return timeDiff
+    self.postMessage({
+        type: 'classify',
+        status: 'complete',
+        output: timeDiff,
+        cloud: false
+    });
+
+    await index.saveIndexToDB("dbName", "ObjectStoreName");
+
+
+    // Cloud computing
+    self.postMessage({
+        type: 'classify',
+        status: 'initiate',
+        cloud: true
+    });
+    startTime = new Date();
+
+    promises = [];
+    completed = 0;
+
+
+    for (let i = 0; i < numVectors; i++) {
+        var randomWords = ''
+        for (let j = 0; j < numWords; j++) {
+            const randomIndex = Math.floor(Math.random() * (vocabLength - 1));
+            randomWords += vocabulary[randomIndex] + ' ';
+        }
+            let promise = makeRequestAndCheckStatus(randomWords, i, index);
+            promises.push({
+                promise,
+                status: 'pending'
+            });
+            promise.then(() => {
+                promises.find(p => p.promise === promise).status = 'fulfilled';
+            }).catch(() => {
+                promises.find(p => p.promise === promise).status = 'rejected';
+            });
+        }
+
+    await handlePromises().then(() => {
+        console.log("All promises have been checked.");
+    });
+    
+    endTime = new Date();
+    timeDiff = (endTime - startTime) / 1000;
+    timeDiff = timeDiff.toFixed(2);
+    console.log(
+        'Cloud time', timeDiff
+        )
+    self.postMessage({
+        type: 'classify',
+        status: 'complete',
+        output: timeDiff,
+        cloud: true
+    });
 }
 
 // Listen for messages from the main thread
@@ -92,19 +194,20 @@ self.addEventListener('message', async (event) => {
     switch (type) {
         case 'classify':
             try {
-                // number of embeddings to generate
-                const generationTimes = await generateEmbeddings(text)
-                self.postMessage({
-                    type: 'classify',
-                    status: 'complete',
-                    output: generationTimes,
-                });
+                await generateEmbeddings(text);
             } catch (error) {
                 console.error(error);
                 self.postMessage({
                     type: 'classify',
                     status: 'error',
                     error: error.message,
+                    cloud: true
+                });
+                self.postMessage({
+                    type: 'classify',
+                    status: 'error',
+                    error: error.message,
+                    cloud: false
                 });
             }
             break;
@@ -112,7 +215,8 @@ self.addEventListener('message', async (event) => {
             try {
                 self.postMessage({
                     status: 'initiate',
-                });            
+                    cloud: false
+                });
                 const results = await index.search(
                     await getEmbedding(text),
                     { topK: 5 },
@@ -124,6 +228,7 @@ self.addEventListener('message', async (event) => {
                     type: 'search',
                     status: 'complete',
                     output: results,
+                    cloud: false
                 });
 
                 const DBsize = await index.getAllObjectsFromDB('dbName', 'ObjectStoreName')
@@ -131,6 +236,7 @@ self.addEventListener('message', async (event) => {
                     type: 'search',
                     status: 'size',
                     output: DBsize.length,
+                    cloud: false
                 });
             }
             catch (error) {
@@ -139,6 +245,7 @@ self.addEventListener('message', async (event) => {
                     type: 'search',
                     status: 'error',
                     error: error.message,
+                    cloud: false
                 });
             }
             break;
@@ -194,7 +301,7 @@ self.addEventListener('message', async (event) => {
                     error: error.message,
                 });
             }
-            break;        
+            break;
         case 'delete':
             try {
                 await index.deleteObjectStore("dbName", text)
@@ -210,5 +317,5 @@ self.addEventListener('message', async (event) => {
                     error: error.message,
                 });
             }
-        }
-    });
+    }
+});
