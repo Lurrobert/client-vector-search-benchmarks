@@ -276,7 +276,7 @@ export default function Home() {
         {/* Right Panel */}
 
         <div className="w-1/2 flex flex-col items-center justify-center p-12">
-          <h1 className="text-5xl font-bold mb-2 text-center">Client side compute</h1>
+          <h1 className="text-5xl font-bold mb-2 text-center">Cloud computing of GTE small on edge</h1>
           {readyCloud !== null && (
             <div>
               {
