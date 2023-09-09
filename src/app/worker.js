@@ -17,10 +17,34 @@ export async function getServerSideProps() {
   
     return vocabulary
   }
+
+function splitTextWithOverlap(text) {
+    console.log('text', text)
+    // Split the text into an array of words
+    const words = text.split(' ');
   
+    // Initialize variables for sentence length and overlapping
+    const sentenceLengthToSplit = 7;
+    const overlapping = 2;
+  
+    // Initialize an empty array to store the resulting sentences
+    let result = [];
+  
+    // Iterate over the array of words to create sentences
+    for (let i = 0; i < words.length; i += sentenceLengthToSplit - overlapping) {
+      // Extract a slice of words to form a sentence
+      let slice = words.slice(i, i + sentenceLengthToSplit);
+  
+      // Join the slice into a sentence and add it to the result array
+      result.push(slice.join(' '));
+    }
+  
+    return result;
+  }
+
 const vocabulary =  await getServerSideProps();
 
-const index = new EmbeddingIndex(); 
+const index = new EmbeddingIndex();
 
 async function generateEmbeddings(numVectors, numWords = 5) {
     const vocabLength = vocabulary.length;
@@ -94,7 +118,7 @@ self.addEventListener('message', async (event) => {
                     { topK: 5 },
                     true,
                     'dbName',
-                    'ObjectStoreName'
+                    '1'
                 )
                 console.log('results', results)
                 self.postMessage({
@@ -103,7 +127,7 @@ self.addEventListener('message', async (event) => {
                     output: results,
                 });
 
-                const DBsize = await index.getAllObjectsFromDB('dbName', 'ObjectStoreName')
+                const DBsize = await index.getAllObjectsFromDB('dbName', '1')
                 console.log('DBsize', DBsize.length)
                 self.postMessage({
                     type: 'search',
@@ -120,5 +144,48 @@ self.addEventListener('message', async (event) => {
                 });
             }
             break;
-    }
-});
+        case 'addRawText':
+            try {
+                console.log('text', text)
+                const sentences = splitTextWithOverlap(text);
+                console.log('sentences', sentences)
+                let startTime, endTime;
+                self.postMessage({
+                    type: 'classify',
+                    status: 'initiate',
+                });
+
+                startTime = new Date();
+                for (let i = 0; i < sentences.length; i++) {
+                    const objectToAdd = { id: i, name: sentences[i], embedding: await getEmbedding(sentences[i]) };
+                    index.add(objectToAdd);
+
+                    if ((i + 1) % 50 === 0) {
+                        console.log('50+ done...');
+                        self.postMessage({
+                            type: 'classify',
+                            status: 'update',
+                            progress: i + 1,
+                        });
+                    }
+                }
+                await index.saveIndexToDB("dbName", "1");
+
+                endTime = new Date();
+                let timeDiff = (endTime - startTime) / 1000;
+                timeDiff = timeDiff.toFixed(2);
+                console.log(
+                    'TT TIME', timeDiff
+                )
+                return timeDiff
+            } catch (error) {
+                console.error(error);
+                self.postMessage({
+                    type: 'classify',
+                    status: 'error',
+                    error: error.message,
+                });
+            }
+            break;        
+        }
+    });

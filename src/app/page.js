@@ -10,6 +10,7 @@ export default function Home() {
   const [inProgress, setInProgress] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [searchValue, setSearchValue] = useState('');
+  const [rawText, setRawText] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [size, setSize] = useState(null);
 
@@ -94,6 +95,13 @@ export default function Home() {
     }
   }, []);
 
+  const addRawText = useCallback((text) => {
+    if (worker.current) {
+      worker.current.postMessage({ type: 'addRawText', text });
+    }
+  }, []);
+  
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-12">
       <h1 className="text-5xl font-bold mb-2 text-center">Transformers.js</h1>
@@ -129,6 +137,30 @@ export default function Home() {
       >
         Submit
       </button>
+
+      <p className="text-center mb-4">Paste raw text to add to the database</p>
+      
+      <textarea
+        className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
+        rows="10"
+        placeholder="Paste your text here..."
+        onChange={e => {
+          setRawText(e.target.value)
+        }}
+      />
+      
+      <button
+        className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
+        onClick={e => {
+          setInProgress(true);
+          addRawText(rawText)
+        }}
+      >
+        Submit
+      </button>
+      
+
+
 
       {/* panels */}
       <div className="flex min-h-screen">
