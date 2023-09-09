@@ -81,7 +81,16 @@ export default function Home() {
               break;
           }
           break;
-      }
+        case 'addRawText':
+          switch (e.data.status) {
+            case 'size':
+              setReady(true);
+              setCurrentProgress(0)
+              setInputValue(e.data.output)
+              break;
+          }
+          break;
+        }
     };
 
     worker.current.addEventListener('message', onMessageReceived);
@@ -115,6 +124,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-12">
+      
       <h1 className="text-5xl font-bold mb-2 text-center">Transformers.js</h1>
       <h2 className="text-2xl mb-4 text-center">Next.js template (client-side)</h2>
       <input
@@ -139,15 +149,16 @@ export default function Home() {
       />
 
       <div className="text-center mb-4">Number of vectors to generate: <span className="font-bold">{inputValue}</span></div>
-      <button
+      <Button
+        color="primary"
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
         onClick={e => {
           setInProgress(true);
           classify(parseInt(inputValue))
         }}
       >
-        Submit
-      </button>
+        Generate random embeddings
+      </Button>
 
       <div className="text-center mb-4">Paste raw text to add to the database</div>
       
@@ -160,21 +171,21 @@ export default function Home() {
         }}
       />
       
-      <button
+      <Button
+        color="primary"
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
         onClick={e => {
           setInProgress(true);
           addRawText(rawText)
         }}
       >
-        Submit
-      </button>
-      
+        Generate embeddings from raw text
+      </Button>
 
 
 
       {/* panels */}
-      <div className="flex min-h-screen">
+      <div className="flex">
         {/* Left Panel */}
         <div className="w-1/2 flex flex-col items-center justify-center p-12">
           <h1 className="text-5xl font-bold mb-2 text-center">Client side compute</h1>
@@ -246,28 +257,34 @@ export default function Home() {
           </Button>
           {ready !== null && (
             <div>
-              {
-                inProgress ? (
+              {(
                   <>
-                    <div>Loading...</div>
-                  </>
-                ) : (
-                  <>
+                  <div className="gap-1 grid grid-cols-2 sm:grid-cols-2">
                     {searchResult && searchResult.map((item, index) => (
                       <div key={index}>
                         <Card>
                           <CardBody>
-                            <div>{`Similarity: ${item.similarity}`}</div>
-                            <div>{`Match: ${JSON.stringify(item.object.name).slice(0, -3)}`}</div>
+                            <div>{item.object.name}</div>
                           </CardBody>
+                          <CardFooter className="text-small justify-between">
+                          <b>Similarity</b>
+                          <p className="text-small">{item.similarity}</p>
+                          </CardFooter>
                         </Card>
                       </div>
                     ))}
+                    </div>
                   </>
                 )
               }
-              TOTAL SIZE: {size}
-              <button
+              <Card>
+              <CardBody>
+                <p>Database size </p>
+                <p><b>{size}</b> vectors</p>
+              </CardBody>
+            </Card>
+              <Button
+              color="danger"
               className="w-full max-w-xs p-2 border border-gray-300 rounded"
               onClick={e => {
                 setInProgress(false);
@@ -275,7 +292,7 @@ export default function Home() {
               }}
             >
               Delete DB
-            </button>
+            </Button>
             </div>
           )}
         </div>

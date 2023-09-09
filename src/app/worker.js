@@ -25,8 +25,8 @@ function splitTextWithOverlap(text) {
     const words = text.split(' ');
   
     // Initialize variables for sentence length and overlapping
-    const sentenceLengthToSplit = 7;
-    const overlapping = 2;
+    const sentenceLengthToSplit = 15;
+    const overlapping = 4;
   
     // Initialize an empty array to store the resulting sentences
     let result = [];
@@ -146,7 +146,7 @@ self.addEventListener('message', async (event) => {
             try {
                 const sentences = splitTextWithOverlap(text);
                 self.postMessage({
-                    type: 'search',
+                    type: 'addRawText',
                     status: 'size',
                     output: sentences.length,
                 });
@@ -158,6 +158,9 @@ self.addEventListener('message', async (event) => {
 
                 startTime = new Date();
                 for (let i = 0; i < sentences.length; i++) {
+                    if (sentences[i] === '') {
+                        continue;
+                    }
                     const objectToAdd = { id: i, name: sentences[i], embedding: await getEmbedding(sentences[i]) };
                     index.add(objectToAdd);
 
@@ -169,7 +172,7 @@ self.addEventListener('message', async (event) => {
                         });
                     }
                 }
-                await index.saveIndexToDB("dbName", "ObjectStoreName");
+                await index.saveIndexToDB("dbName", "ObjectStoreName")
 
                 endTime = new Date();
                 let timeDiff = (endTime - startTime) / 1000;
@@ -177,6 +180,11 @@ self.addEventListener('message', async (event) => {
                 console.log(
                     'TT TIME', timeDiff
                 )
+                self.postMessage({
+                    type: 'classify',
+                    status: 'complete',
+                    output: timeDiff,
+                });
                 return timeDiff
             } catch (error) {
                 console.error(error);
