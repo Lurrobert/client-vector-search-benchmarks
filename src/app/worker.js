@@ -19,8 +19,10 @@ export async function getServerSideProps() {
   }
 
 function splitTextWithOverlap(text) {
-    console.log('text', text)
     // Split the text into an array of words
+    // strip any nymber of repeated space characters or new line with a single space
+    text = text.replace(/\s+/g, ' ')
+    console.log('text', text)
     const words = text.split(' ');
   
     // Initialize variables for sentence length and overlapping
@@ -148,6 +150,11 @@ self.addEventListener('message', async (event) => {
             try {
                 console.log('text', text)
                 const sentences = splitTextWithOverlap(text);
+                self.postMessage({
+                    type: 'search',
+                    status: 'size',
+                    output: sentences.length,
+                });
                 console.log('sentences', sentences)
                 let startTime, endTime;
                 self.postMessage({
