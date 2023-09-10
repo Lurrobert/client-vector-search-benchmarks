@@ -84,7 +84,7 @@ async function makeRequestAndCheckStatus(randomWords, i, index) {
         retry({
             times: 5,
             interval: function(retryCount) {
-              return 50 * Math.pow(2, retryCount);
+              return 50 * retryCount;
             }
           }, 
           function (callback) { return apiMethod(options, callback) },
@@ -107,25 +107,6 @@ async function makeRequestAndCheckStatus(randomWords, i, index) {
           });
     });
 }
-
-        // axios.request(options)
-        //     .then(response => {
-        //         console.log("status", response.status)
-        //         const objectToAdd = { id: i, name: randomWords, embedding: response.data.embedding };
-        //         index.add(objectToAdd);
-        //         completed++;
-        //         self.postMessage({
-        //             type: 'classify',
-        //             status: 'update',
-        //             progress: completed,
-        //             cloud: true
-        //         });
-        //         resolve();
-        //     })
-        //     .catch(error => {
-        //         console.error(`Error making the request: ${error}`);
-        //         reject(error);
-        //     });
 
 
 async function handlePromises() {
