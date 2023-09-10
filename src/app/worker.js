@@ -180,7 +180,7 @@ async function generateEmbeddings(numVectors, numWords = 5) {
         cloud: false
     });
 
-    // await index.saveIndexToDB("dbName", "ObjectStoreName");
+    await index.saveIndexToDB("dbName", "ObjectStoreName");
 
 
     // Cloud computing
