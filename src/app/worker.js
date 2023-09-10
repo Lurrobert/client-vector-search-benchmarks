@@ -253,6 +253,9 @@ self.addEventListener('message', async (event) => {
                     status: 'initiate',
                     cloud: false
                 });
+                // measure time
+                let startTime, endTime;
+                startTime = new Date();
                 const results = await index.search(
                     await getEmbedding(text),
                     { topK: 5 },
@@ -260,11 +263,13 @@ self.addEventListener('message', async (event) => {
                     'dbName',
                     'ObjectStoreName'
                 )
+                endTime = new Date();
+                let timeDiff = (endTime - startTime) / 1000;
                 self.postMessage({
                     type: 'search',
                     status: 'complete',
-                    output: results,
-                    cloud: false
+                    output: {result: results, time: timeDiff},
+                    cloud: false,
                 });
 
                 const DBsize = await index.getAllObjectsFromDB('dbName', 'ObjectStoreName')

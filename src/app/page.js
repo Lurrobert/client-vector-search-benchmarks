@@ -2,7 +2,7 @@
 import React from "react";
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-import {CircularProgress, Card, CardBody, CardFooter, Chip} from "@nextui-org/react";
+import {CircularProgress, Card, CardBody, CardFooter, Chip, CardHeader, Divider} from "@nextui-org/react";
 import { Button } from "@nextui-org/react";
 
 
@@ -250,7 +250,7 @@ export default function Home() {
             {(
                 <>
                 <div className="gap-1 grid grid-cols-2 sm:grid-cols-2">
-                  {searchResult && searchResult.map((item, index) => (
+                  {searchResult.result && searchResult.result.map((item, index) => (
                     <div key={index}>
                       <Card>
                         <CardBody>
@@ -267,14 +267,17 @@ export default function Home() {
                 </>
               )
             }
-            <Card>
-              <CardBody>
-                <div className="flex justify-between items-center">
-                  <p>Database size</p>
-                  <p><b>{size}</b> vectors</p>
-                </div>
-              </CardBody>
-            </Card>
+          <Card>
+              <CardHeader className="flex gap-3">
+                <p>Database size</p>
+                <p><b>{size}</b> vectors</p>
+                </CardHeader>
+                <Divider/>
+                <CardFooter className="flex gap-3">
+                  <p>Searched in</p>
+                  <p><b>{searchResult.time}</b> seconds</p>
+                </CardFooter>
+          </Card>
             <Button
             color="danger"
             className="w-full max-w-xs p-2 border border-gray-300 rounded"
