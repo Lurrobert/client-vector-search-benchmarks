@@ -264,7 +264,7 @@ self.addEventListener('message', async (event) => {
                     'ObjectStoreName'
                 )
                 endTime = new Date();
-                let timeDiff = (endTime - startTime) / 1000;
+                let timeDiff = endTime - startTime;
                 self.postMessage({
                     type: 'search',
                     status: 'complete',

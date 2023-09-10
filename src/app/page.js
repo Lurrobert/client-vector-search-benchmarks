@@ -250,7 +250,7 @@ export default function Home() {
             {(
                 <>
                 <div className="gap-1 grid grid-cols-2 sm:grid-cols-2">
-                  {searchResult.result && searchResult.result.map((item, index) => (
+                  {searchResult?.result && searchResult?.result.map((item, index) => (
                     <div key={index}>
                       <Card>
                         <CardBody>
@@ -267,6 +267,7 @@ export default function Home() {
                 </>
               )
             }
+            {searchResult?.result && (
           <Card>
               <CardHeader className="flex gap-3">
                 <p>Database size</p>
@@ -275,9 +276,10 @@ export default function Home() {
                 <Divider/>
                 <CardFooter className="flex gap-3">
                   <p>Searched in</p>
-                  <p><b>{searchResult.time}</b> seconds</p>
+                  <b>{searchResult.time.toString()}</b> milliseconds
                 </CardFooter>
           </Card>
+            )}
             <Button
             color="danger"
             className="w-full max-w-xs p-2 border border-gray-300 rounded"
