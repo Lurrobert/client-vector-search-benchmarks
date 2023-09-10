@@ -200,7 +200,7 @@ export default function Home() {
         Generate random embeddings
       </Button>
 
-      {/* <div className="text-center mb-4">Paste raw text to add to the database</div>
+      <div className="text-center mb-4">Paste raw text to add to the database</div>
       
       <textarea
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
@@ -209,19 +209,85 @@ export default function Home() {
         onChange={e => {
           setRawText(e.target.value)
         }}
-      /> */}
-{/*       
+      />
+      
       <Button
         color="primary"
         className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
         onClick={e => {
-          setInProgress(true);
+          setInProgressLocal(true);
           addRawText(rawText)
         }}
       >
         Generate embeddings from raw text
-      </Button> */}
+      </Button>
 
+      <div className="w-1/2 flex flex-col items-center justify-center">
+        <h1 className="text-5xl font-bold mb-2 text-center">Embedding Search</h1>
+        <div className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4">
+          <input
+            type="text"
+            className="w-full p-2 border border-gray-300 rounded"
+            placeholder="Search embeddings..."
+            onChange= {e => {
+              setSearchValue(e.target.value)
+            }}
+
+          />
+        </div>
+        <Button 
+          color="primary"
+          className="w-full max-w-xs p-2 border border-gray-300 rounded"
+          onClick={e => {
+            setInProgressLocal(true);
+            searchEmbeddings(searchValue)
+          }}
+        >
+          Search
+        </Button>
+        {readyLocal !== null && (
+          <div>
+            {(
+                <>
+                <div className="gap-1 grid grid-cols-2 sm:grid-cols-2">
+                  {searchResult && searchResult.map((item, index) => (
+                    <div key={index}>
+                      <Card>
+                        <CardBody>
+                          <div>{item.object.name}</div>
+                        </CardBody>
+                        <CardFooter className="text-small justify-between">
+                        <b>Similarity</b>
+                        <p className="text-small">{item.similarity}</p>
+                        </CardFooter>
+                      </Card>
+                    </div>
+                  ))}
+                  </div>
+                </>
+              )
+            }
+            <Card>
+              <CardBody>
+                <div className="flex justify-between items-center">
+                  <p>Database size</p>
+                  <p><b>{size}</b> vectors</p>
+                </div>
+              </CardBody>
+            </Card>
+            <Button
+            color="danger"
+            className="w-full max-w-xs p-2 border border-gray-300 rounded"
+            onClick={e => {
+              setInProgressLocal(false);
+              deleteObjectStore('ObjectStoreName')
+            }}
+          >
+            Delete DB
+          </Button>
+          </div>
+        )}
+      </div>
 
 
       {/* panels */}
@@ -320,75 +386,10 @@ export default function Home() {
             </div>
           )}
         </div>
-
-
-
-        
-        <div className="w-1/2 flex flex-col items-center justify-center p-12">
-          <h1 className="text-5xl font-bold mb-2 text-center">Embedding Search</h1>
-          <div className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4">
-            <input
-              type="text"
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Search embeddings..."
-              onChange= {e => {
-                setSearchValue(e.target.value)
-              }}
-
-            />
-          </div>
-          <Button 
-            color="primary"
-            className="w-full max-w-xs p-2 border border-gray-300 rounded"
-            onClick={e => {
-              setInProgressLocal(true);
-              searchEmbeddings(searchValue)
-            }}
-          >
-            Search
-          </Button>
-          {readyLocal !== null && (
-            <div>
-              {(
-                  <>
-                  <div className="gap-1 grid grid-cols-2 sm:grid-cols-2">
-                    {searchResult && searchResult.map((item, index) => (
-                      <div key={index}>
-                        <Card>
-                          <CardBody>
-                            <div>{item.object.name}</div>
-                          </CardBody>
-                          <CardFooter className="text-small justify-between">
-                          <b>Similarity</b>
-                          <p className="text-small">{item.similarity}</p>
-                          </CardFooter>
-                        </Card>
-                      </div>
-                    ))}
-                    </div>
-                  </>
-                )
-              }
-              <Card>
-              <CardBody>
-                <p>Database size </p>
-                <p><b>{size}</b> vectors</p>
-              </CardBody>
-            </Card>
-              <Button
-              color="danger"
-              className="w-full max-w-xs p-2 border border-gray-300 rounded"
-              onClick={e => {
-                setInProgressLocal(false);
-                deleteObjectStore('ObjectStoreName')
-              }}
-            >
-              Delete DB
-            </Button>
-            </div>
-          )}
-        </div>
       </div>
+
+
+
     </main>
   )
 }

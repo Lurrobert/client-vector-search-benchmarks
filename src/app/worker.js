@@ -1,5 +1,7 @@
 import { getEmbedding, EmbeddingIndex } from '@robertoooooo/client-vector-search'
 import axios from 'axios';
+import retry from 'async/retry';
+
 
 
 export async function getServerSideProps() {
@@ -48,7 +50,23 @@ const vocabulary = await getServerSideProps();
 const index = new EmbeddingIndex();
 let completed = 0;
 let promises = [];
+let executionTimes = [];
 
+
+const apiMethod = function(options, callback) {
+    axios.request(options)
+        .then(response => {
+            console.log("status", response.status)
+            let {embedding, timeTaken } = response.data
+            executionTimes.push(timeTaken)
+            callback(null, embedding);
+
+        })
+        .catch(error => {
+            console.error(`Error making the request: ${error}`);
+            callback(error, null);
+        });
+}
 
 async function makeRequestAndCheckStatus(randomWords, i, index) {
     const options = {
@@ -63,9 +81,19 @@ async function makeRequestAndCheckStatus(randomWords, i, index) {
         }
     };
     return new Promise((resolve, reject) => {
-        axios.request(options)
-            .then(response => {
-                const objectToAdd = { id: i, name: randomWords, embedding: response.data.embedding };
+        retry({
+            times: 5,
+            interval: function(retryCount) {
+              return 50 * Math.pow(2, retryCount);
+            }
+          }, 
+          function (callback) { return apiMethod(options, callback) },
+          function(err, result) {   
+            if(err) {
+                console.error("Error: ", err);
+                reject(err);
+            } else {
+                const objectToAdd = { id: i, name: randomWords, embedding: result };
                 index.add(objectToAdd);
                 completed++;
                 self.postMessage({
@@ -74,14 +102,30 @@ async function makeRequestAndCheckStatus(randomWords, i, index) {
                     progress: completed,
                     cloud: true
                 });
-                resolve();
-            })
-            .catch(error => {
-                console.error(`Error making the request: ${error}`);
-                reject(error);
-            });
+                resolve(result);
+            }
+          });
     });
 }
+
+        // axios.request(options)
+        //     .then(response => {
+        //         console.log("status", response.status)
+        //         const objectToAdd = { id: i, name: randomWords, embedding: response.data.embedding };
+        //         index.add(objectToAdd);
+        //         completed++;
+        //         self.postMessage({
+        //             type: 'classify',
+        //             status: 'update',
+        //             progress: completed,
+        //             cloud: true
+        //         });
+        //         resolve();
+        //     })
+        //     .catch(error => {
+        //         console.error(`Error making the request: ${error}`);
+        //         reject(error);
+        //     });
 
 
 async function handlePromises() {
@@ -106,23 +150,23 @@ async function generateEmbeddings(numVectors, numWords = 5) {
         cloud: false
     });
     startTime = new Date();
-    for (let i = 0; i < numVectors; i++) {
-        var randomWords = ''
-        for (let j = 0; j < numWords; j++) {
-            const randomIndex = Math.floor(Math.random() * (vocabLength - 1));
-            randomWords += vocabulary[randomIndex] + ' ';
-        }
-        const objectToAdd = { id: i, name: randomWords, embedding: await getEmbedding(randomWords) };
-        index.add(objectToAdd);
-        if ((i + 1) % 10 === 0) {
-            self.postMessage({
-                type: 'classify',
-                status: 'update',
-                progress: i + 1,
-                cloud: false
-            });
-        }
-    }
+    // for (let i = 0; i < numVectors; i++) {
+    //     var randomWords = ''
+    //     for (let j = 0; j < numWords; j++) {
+    //         const randomIndex = Math.floor(Math.random() * (vocabLength - 1));
+    //         randomWords += vocabulary[randomIndex] + ' ';
+    //     }
+    //     const objectToAdd = { id: i, name: randomWords, embedding: await getEmbedding(randomWords) };
+    //     index.add(objectToAdd);
+    //     if ((i + 1) % 10 === 0) {
+    //         self.postMessage({
+    //             type: 'classify',
+    //             status: 'update',
+    //             progress: i + 1,
+    //             cloud: false
+    //         });
+    //     }
+    // }
     endTime = new Date();
     let timeDiff = (endTime - startTime) / 1000;
     timeDiff = timeDiff.toFixed(2);
@@ -136,7 +180,7 @@ async function generateEmbeddings(numVectors, numWords = 5) {
         cloud: false
     });
 
-    await index.saveIndexToDB("dbName", "ObjectStoreName");
+    // await index.saveIndexToDB("dbName", "ObjectStoreName");
 
 
     // Cloud computing
@@ -149,6 +193,7 @@ async function generateEmbeddings(numVectors, numWords = 5) {
 
     promises = [];
     completed = 0;
+    executionTimes = [];
 
 
     for (let i = 0; i < numVectors; i++) {
@@ -178,7 +223,17 @@ async function generateEmbeddings(numVectors, numWords = 5) {
     timeDiff = timeDiff.toFixed(2);
     console.log(
         'Cloud time', timeDiff
-        )
+    )
+    console.log(
+        "Average time", executionTimes.reduce((a, b) => a + b, 0) / executionTimes.length
+    )
+    console.log(
+        "Max time", Math.max(...executionTimes)
+    )
+    console.log(
+        "Min time", Math.min(...executionTimes)
+    )
+
     self.postMessage({
         type: 'classify',
         status: 'complete',
@@ -256,11 +311,13 @@ self.addEventListener('message', async (event) => {
                     type: 'addRawText',
                     status: 'size',
                     output: sentences.length,
+                    cloud: false
                 });
                 let startTime, endTime;
                 self.postMessage({
                     type: 'classify',
                     status: 'initiate',
+                    cloud: false
                 });
 
                 startTime = new Date();
@@ -276,6 +333,7 @@ self.addEventListener('message', async (event) => {
                             type: 'classify',
                             status: 'update',
                             progress: i + 1,
+                            cloud: false
                         });
                     }
                 }
@@ -291,6 +349,7 @@ self.addEventListener('message', async (event) => {
                     type: 'classify',
                     status: 'complete',
                     output: timeDiff,
+                    cloud: false
                 });
                 return timeDiff
             } catch (error) {
