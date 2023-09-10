@@ -150,23 +150,23 @@ async function generateEmbeddings(numVectors, numWords = 5) {
         cloud: false
     });
     startTime = new Date();
-    // for (let i = 0; i < numVectors; i++) {
-    //     var randomWords = ''
-    //     for (let j = 0; j < numWords; j++) {
-    //         const randomIndex = Math.floor(Math.random() * (vocabLength - 1));
-    //         randomWords += vocabulary[randomIndex] + ' ';
-    //     }
-    //     const objectToAdd = { id: i, name: randomWords, embedding: await getEmbedding(randomWords) };
-    //     index.add(objectToAdd);
-    //     if ((i + 1) % 10 === 0) {
-    //         self.postMessage({
-    //             type: 'classify',
-    //             status: 'update',
-    //             progress: i + 1,
-    //             cloud: false
-    //         });
-    //     }
-    // }
+    for (let i = 0; i < numVectors; i++) {
+        var randomWords = ''
+        for (let j = 0; j < numWords; j++) {
+            const randomIndex = Math.floor(Math.random() * (vocabLength - 1));
+            randomWords += vocabulary[randomIndex] + ' ';
+        }
+        const objectToAdd = { id: i, name: randomWords, embedding: await getEmbedding(randomWords) };
+        index.add(objectToAdd);
+        if ((i + 1) % 10 === 0) {
+            self.postMessage({
+                type: 'classify',
+                status: 'update',
+                progress: i + 1,
+                cloud: false
+            });
+        }
+    }
     endTime = new Date();
     let timeDiff = (endTime - startTime) / 1000;
     timeDiff = timeDiff.toFixed(2);
