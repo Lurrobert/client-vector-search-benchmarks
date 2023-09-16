@@ -57,9 +57,9 @@ const apiMethod = function(options, callback) {
     axios.request(options)
         .then(response => {
             console.log("status", response.status)
-            let {embedding, timeTaken } = response.data
+            let {embeddings, timeTaken } = response.data
             executionTimes.push(timeTaken)
-            callback(null, embedding);
+            callback(null, embeddings[0]);
 
         })
         .catch(error => {
@@ -77,7 +77,7 @@ async function makeRequestAndCheckStatus(randomWords, i, index) {
             'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1ZHl6ZndnZnlxZHJrZ2Rpc25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQyNTk4NTEsImV4cCI6MjAwOTgzNTg1MX0.Pt2lSJrXSv8lhgGfFVi1csgmdZoPcP5_4Yu2oky1BAs',
         },
         data: {
-            "input": randomWords
+            "input": [randomWords]
         }
     };
     return new Promise((resolve, reject) => {
