@@ -1,4 +1,4 @@
-import { getEmbedding, EmbeddingIndex } from '@robertoooooo/client-vector-search'
+import { getEmbedding, EmbeddingIndex } from 'client-vector-search'
 import axios from 'axios';
 import retry from 'async/retry';
 
@@ -146,8 +146,16 @@ async function generateEmbeddings(numVectors, numWords = 5) {
                 progress: i + 1,
                 cloud: false
             });
+            await index.saveIndex(
+                "indexedDB",
+                {options: {
+                    DBName: 'clientVectorDB',
+                    objectStoreName: 'ClientEmbeddingStore',
+                }}
+            );
         }
     }
+    
     endTime = new Date();
     let timeDiff = (endTime - startTime) / 1000;
     timeDiff = timeDiff.toFixed(2);
@@ -161,7 +169,7 @@ async function generateEmbeddings(numVectors, numWords = 5) {
         cloud: false
     });
 
-    await index.saveIndexToDB("dbName", "ObjectStoreName");
+    await index.saveIndex("indexedDB", "dbName", "ObjectStoreName");
 
 
     // Cloud computing
@@ -258,10 +266,14 @@ self.addEventListener('message', async (event) => {
                 startTime = new Date();
                 const results = await index.search(
                     await getEmbedding(text),
-                    { topK: 5 },
-                    true,
-                    'dbName',
-                    'ObjectStoreName'
+                     {
+                        topK: 5,
+                        useStorage: 'indexedDB',
+                        storageOptions: {
+                            indexedDBName: 'clientVectorDB',
+                            indexedDBObjectStoreName: 'ClientEmbeddingStore',
+                        },
+                    },
                 )
                 endTime = new Date();
                 let timeDiff = endTime - startTime;
@@ -272,7 +284,7 @@ self.addEventListener('message', async (event) => {
                     cloud: false,
                 });
 
-                const DBsize = await index.getAllObjectsFromDB('dbName', 'ObjectStoreName')
+                const DBsize = await index.getAllObjectsFromIndexedDB('dbName', 'ObjectStoreName')
                 self.postMessage({
                     type: 'search',
                     status: 'size',
@@ -323,7 +335,7 @@ self.addEventListener('message', async (event) => {
                         });
                     }
                 }
-                await index.saveIndexToDB("dbName", "ObjectStoreName")
+                await index.saveIndex("indexedDB", "dbName", "ObjectStoreName")
 
                 endTime = new Date();
                 let timeDiff = (endTime - startTime) / 1000;
@@ -349,7 +361,7 @@ self.addEventListener('message', async (event) => {
             break;
         case 'delete':
             try {
-                await index.deleteObjectStore("dbName", text)
+                await index.deleteIndexedDBObjectStore("dbName", text)
                 self.postMessage({
                     type: 'delete',
                     status: 'complete',
