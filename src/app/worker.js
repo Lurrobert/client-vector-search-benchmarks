@@ -146,13 +146,6 @@ async function generateEmbeddings(numVectors, numWords = 5) {
                 progress: i + 1,
                 cloud: false
             });
-            await index.saveIndex(
-                "indexedDB",
-                {options: {
-                    DBName: 'clientVectorDB',
-                    objectStoreName: 'ClientEmbeddingStore',
-                }}
-            );
         }
     }
     
